@@ -15,7 +15,7 @@ object RuleProcessor {
       val x = rule.parameters
       for {
         a <- x.split(",")
-      }yield Rule(rule.deviceIdentifier,rule.ruleExpression,a,rule.outputTag,rule.parameters.split(",").toSet.size,rule.ruleWaitTime.toInt,rule.ruleFrequency.toInt)
+      }yield Rule(rule.asset,rule.expression,a,rule.outputTag,rule.parameters.split(",").toSet.size,rule.ruleWaitTime.toInt,rule.ruleFrequency.toInt)
     })(Encoders.product[Rule])
   }
 

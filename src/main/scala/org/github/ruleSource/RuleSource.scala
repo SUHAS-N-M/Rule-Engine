@@ -1,19 +1,24 @@
 package org.github.ruleSource
 
-import org.apache.spark.sql.{DataFrame, DataFrameReader, Row, SQLContext, SparkSession}
+import java.util.Properties
+
+import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.{DataFrame, DataFrameReader, Dataset, Row, SQLContext, SparkSession}
 import org.github.ruleProcessor.RuleProcessor
 
 object RuleSource {
-  def fetchRules(): List[RawRule] ={
-    List(
-      RawRule("Asset1","A>B","A,B","OUTPUT_TAG1","5","2"),
-      RawRule("Asset2","A>B","A,B","OUTPUT_TAG2","5","2"),
-      RawRule("Asset1","A>C","A,C","OUTPUT_TAG3","-1","0")
-    )
+  def fetchRules(spark:SparkSession): Dataset[RawRule] ={
+    val connectionProperties = new Properties()
+    connectionProperties.setProperty("Driver", "org.postgresql.Driver")
+    connectionProperties.setProperty("user","postgres")
+    connectionProperties.setProperty("password","postgres")
+    import spark.implicits._
+    spark.read.jdbc("jdbc:postgresql://localhost:5432/postgres","rule_source",connectionProperties)
+      .withColumn("ruleWaitTime",col("rule_wait_time")).withColumn("ruleFrequency",col("rule_frequency"))
+      .withColumn("outputTag",col("output_tag")).as[RawRule]
   }
   def getRules(spark:SparkSession)={
-    import spark.implicits._
-    val rules = fetchRules().toDS()
+    val rules = fetchRules(spark)
     rules.show()
     RuleProcessor.splitParameters(rules)
   }
