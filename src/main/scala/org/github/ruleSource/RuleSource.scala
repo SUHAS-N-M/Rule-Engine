@@ -19,7 +19,7 @@ object RuleSource {
   }
   def getRules(spark:SparkSession)={
     val rules = fetchRules(spark)
-    rules.show()
+    //rules.show()
     RuleProcessor.splitParameters(rules)
   }
 }

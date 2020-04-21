@@ -10,12 +10,14 @@ import scala.concurrent.duration._
 
 object App  {
   def main(args: Array[String]): Unit = {
+    System.setProperty("hadoop.home.dir", "D:\\Softwares\\HadoopWinUtils")
     println( "Hello World!" )
     val spark = SparkSession
       .builder()
       .appName("DiagnosticEngine")
-      .master("local[1]")
+      .master("local[*]")
       .getOrCreate()
+    spark.conf.set("spark.sql.shuffle.partitions", 5)
     val rules = RuleSource.getRules(spark).as("rules")
     //RuleProcessor.splitParameters(rules)
     val kafkaStream = KafkaSource.readKafkaStream(spark).as("kafkaStream")
@@ -26,7 +28,8 @@ object App  {
     filteredOutput.writeStream.format("console")
       .option("truncate", "false")
       .outputMode(OutputMode.Append())
-      .trigger(Trigger.ProcessingTime(10.seconds))
+      //.trigger(Trigger.ProcessingTime(10.seconds))
+      .option("checkpointLocation", "E:/PersonalProjects/RuleEngine/Checkpoint")
       .start()
       .awaitTermination()
   }

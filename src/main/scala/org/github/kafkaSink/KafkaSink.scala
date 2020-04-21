@@ -27,10 +27,24 @@ object KafkaSink {
     val ruleWaitTime = input.ruleWaitTime
     val currentTimestamp = input.timestamp
     val newValueMap:HashMap[Long,Double] = state.values.filter(t=>{
-      if(t._1 >= currentTimestamp - ruleWaitTime) true else false
-    }).updated(input.timestamp,input.computedValue).filter(t => t._2 == 1.0)
-    println(newValueMap)
-    val computedValue = if(newValueMap.keySet.size > ruleFrequency) 1 else 0
+      if(t._1 > currentTimestamp - ruleWaitTime) true else false
+    }).updated(input.timestamp,input.computedValue).filter(t => t._2 != -999)
+    var computedValue:Int = -999
+    if (newValueMap.keySet.size < ruleWaitTime) {
+      computedValue = -999
+    }
+    else{
+      if(ruleFrequency == -1){
+        println(newValueMap)
+        computedValue = if(newValueMap.filter(t => t._2 == 1.0).keySet.size == newValueMap.keySet.size) 1 else 0
+      }
+      else{
+        computedValue = if(newValueMap.filter(t => t._2 == 1.0).keySet.size>=ruleFrequency) 1 else 0
+      }
+    }
+
+//    println(newValueMap)
+//    val computedValue = if(newValueMap.keySet.size > ruleFrequency) 1 else 0
     WindowRuleState(state.asset,state.outputTag,currentTimestamp,newValueMap,computedValue)
   }
   def updateAllWindowRules(key: (String,String),inputs:Iterator[Computed],oldState:GroupState[WindowRuleState]):Iterator[RuleState] = {
